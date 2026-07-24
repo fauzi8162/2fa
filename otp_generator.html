@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP Generator - 2FA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 25px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .header-icon {
+            font-size: 24px;
+        }
+
+        .secret-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .secret-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .secret-info {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-top: 8px;
+            text-align: right;
+            min-height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .content {
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .otp-display {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .otp-display.empty {
+            opacity: 0.6;
+            border: 2px dashed #999;
+        }
+
+        .otp-code {
+            font-size: 48px;
+            font-weight: 700;
+            color: #667eea;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 8px;
+            margin-bottom: 15px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .otp-empty-text {
+            font-size: 16px;
+            color: #999;
+            font-weight: 500;
+        }
+
+        .timer-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .timer-text {
+            font-size: 14px;
+            color: #666;
+            font-weight: 600;
+            min-width: 60px;
+        }
+
+        .progress-bar {
+            width: 150px;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 100%;
+            transition: width 0.1s linear;
+            border-radius: 3px;
+        }
+
+        .generate-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 40px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .generate-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .generate-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .copy-btn {
+            background: #f0f0f0;
+            color: #333;
+            border: none;
+            padding: 10px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+
+        .copy-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .copy-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4caf50;
+            color: white;
+            padding: 14px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            font-size: 14px;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .copy-notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-content h2 {
+            font-size: 22px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .modal-input-group {
+            margin-bottom: 20px;
+        }
+
+        .modal-input-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 8px;
+            text-align: left;
+        }
+
+        .modal-input-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            transition: border-color 0.3s ease;
+        }
+
+        .modal-input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .modal-btn.save {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .modal-btn.save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .modal-btn.cancel {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .modal-btn.cancel:hover {
+            background: #e0e0e0;
+        }
+
+        .info-text {
+            font-size: 12px;
+            color: #999;
+            margin-top: 15px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                border-radius: 15px;
+            }
+
+            .header {
+                padding: 25px 20px;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .content {
+                padding: 30px 20px;
+            }
+
+            .otp-code {
+                font-size: 36px;
+                letter-spacing: 6px;
+            }
+
+            .generate-btn {
+                padding: 12px 30px;
+                font-size: 14px;
+            }
+
+            .progress-bar {
+                width: 120px;
+            }
+        }
+
+        .footer-info {
+            background: #f5f7fa;
+            padding: 20px;
+            font-size: 12px;
+            color: #999;
+            line-height: 1.6;
+            border-top: 1px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>🔐 OTP Generator</h1>
+            </div>
+            <div>
+                <button class="secret-btn" id="secretBtn" onclick="openSecretModal()">
+                    ⚙️ 2FA Secret
+                </button>
+                <div class="secret-info" id="secretInfo">No secret set</div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="otp-display empty" id="otpDisplay">
+                <div class="otp-empty-text">Klik "Generate OTP" untuk memulai</div>
+            </div>
+
+            <div class="timer-container" id="timerContainer" style="display: none;">
+                <span class="timer-text" id="timerText">30s</span>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 100%;"></div>
+                </div>
+            </div>
+
+            <button class="generate-btn" id="generateBtn" onclick="generateOTP()">
+                Generate OTP
+            </button>
+
+            <button class="copy-btn" id="copyBtn" onclick="copyToClipboard()" style="display: none;">
+                📋 Copy to Clipboard
+            </button>
+
+            <div class="info-text">
+                ℹ️ Kode berlaku selama 30 detik. Simpan secret Anda di tempat aman sebagai backup.
+            </div>
+        </div>
+
+        <div class="footer-info">
+            💡 Semua data disimpan secara lokal di browser Anda. Tidak ada data yang dikirim ke server.
+        </div>
+    </div>
+
+    <!-- Modal untuk input Secret -->
+    <div class="modal" id="secretModal">
+        <div class="modal-content">
+            <h2>2FA Secret Key</h2>
+            <div class="modal-input-group">
+                <label for="secretInput">Masukkan Secret Key (Base32):</label>
+                <input type="text" id="secretInput" placeholder="JBSWY3DPEHPK3PXP" autocomplete="off">
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn save" onclick="saveSecret()">Simpan</button>
+                <button class="modal-btn cancel" onclick="closeSecretModal()">Batal</button>
+            </div>
+            <div class="info-text">
+                ✓ Secret harus dalam format Base32 (A-Z, 2-7)<br>
+                ✓ Minimal 16 karakter untuk keamanan optimal
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="copy-notification" id="notification"></div>
+
+    <script>
+        // Base32 Encoding/Decoding
+        const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+
+        function base32Decode(str) {
+            str = str.replace(/=/g, '').toUpperCase();
+            const bits = str.split('').map(char => {
+                const idx = BASE32_ALPHABET.indexOf(char);
+                if (idx === -1) throw new Error('Invalid Base32 character: ' + char);
+                return idx.toString(2).padStart(5, '0');
+            }).join('');
+
+            const bytes = [];
+            for (let i = 0; i < bits.length; i += 8) {
+                const byte = bits.substr(i, 8).padEnd(8, '0');
+                bytes.push(parseInt(byte, 2));
+            }
+
+            return new Uint8Array(bytes);
+        }
+
+        // HMAC-SHA1 using Web Crypto API
+        async function hmacSha1(key, message) {
+            const algorithm = { name: 'HMAC', hash: 'SHA-1' };
+            const cryptoKey = await crypto.subtle.importKey('raw', key, algorithm, false, ['sign']);
+            const signature = await crypto.subtle.sign('HMAC', cryptoKey, message);
+            return new Uint8Array(signature);
+        }
+
+        // TOTP Generation
+        async function generateTOTP(secret, time = null) {
+            if (!secret || secret.trim().length === 0) {
+                throw new Error('Secret tidak boleh kosong');
+            }
+
+            try {
+                const secretBytes = base32Decode(secret);
+                
+                if (time === null) {
+                    time = Math.floor(Date.now() / 1000);
+                }
+
+                const counter = Math.floor(time / 30);
+                
+                // Convert counter to 8-byte big-endian
+                const buffer = new ArrayBuffer(8);
+                const view = new DataView(buffer);
+                view.setBigInt64(0, BigInt(counter), false);
+                const counterBytes = new Uint8Array(buffer);
+
+                // Generate HMAC-SHA1
+                const hash = await hmacSha1(secretBytes, counterBytes);
+
+                // Dynamic truncation
+                const offset = hash[hash.length - 1] & 0x0f;
+                const code = (
+                    ((hash[offset] & 0x7f) << 24) |
+                    ((hash[offset + 1] & 0xff) << 16) |
+                    ((hash[offset + 2] & 0xff) << 8) |
+                    (hash[offset + 3] & 0xff)
+                ) % 1000000;
+
+                return String(code).padStart(6, '0');
+            } catch (error) {
+                throw new Error('Invalid secret key format: ' + error.message);
+            }
+        }
+
+        // Get time remaining in current window
+        function getTimeRemaining() {
+            const now = Math.floor(Date.now() / 1000);
+            return 30 - (now % 30);
+        }
+
+        // Load secret from localStorage
+        function loadSecret() {
+            const secret = localStorage.getItem('otpSecret');
+            updateSecretInfo(secret);
+            return secret;
+        }
+
+        // Update secret info display
+        function updateSecretInfo(secret) {
+            const secretInfo = document.getElementById('secretInfo');
+            if (secret && secret.length >= 4) {
+                const lastFour = secret.slice(-4);
+                secretInfo.textContent = `Secret: ...${lastFour}`;
+            } else {
+                secretInfo.textContent = 'No secret set';
+            }
+        }
+
+        // Open secret modal
+        function openSecretModal() {
+            const modal = document.getElementById('secretModal');
+            const input = document.getElementById('secretInput');
+            const savedSecret = localStorage.getItem('otpSecret');
+            input.value = savedSecret || '';
+            modal.classList.add('show');
+            input.focus();
+        }
+
+        // Close secret modal
+        function closeSecretModal() {
+            document.getElementById('secretModal').classList.remove('show');
+        }
+
+        // Save secret
+        function saveSecret() {
+            const input = document.getElementById('secretInput');
+            const secret = input.value.trim().toUpperCase();
+
+            if (!secret) {
+                showNotification('Secret tidak boleh kosong', 'error');
+                return;
+            }
+
+            // Validate Base32
+            const base32Regex = /^[A-Z2-7=]+$/;
+            if (!base32Regex.test(secret)) {
+                showNotification('Secret harus berformat Base32 (A-Z, 2-7)', 'error');
+                return;
+            }
+
+            if (secret.length < 16) {
+                showNotification('Secret minimal 16 karakter untuk keamanan optimal', 'warning');
+                return;
+            }
+
+            localStorage.setItem('otpSecret', secret);
+            updateSecretInfo(secret);
+            closeSecretModal();
+            showNotification('Secret berhasil disimpan', 'success');
+        }
+
+        // Generate OTP
+        async function generateOTP() {
+            let secret = loadSecret();
+
+            if (!secret) {
+                openSecretModal();
+                return;
+            }
+
+            const button = document.getElementById('generateBtn');
+            const lastGenerateTime = parseInt(localStorage.getItem('lastGenerateTime') || '0');
+            const now = Date.now();
+
+            // Check if 30 seconds have passed
+            if (now - lastGenerateTime < 30000) {
+                button.disabled = true;
+                return;
+            }
+
+            button.disabled = true;
+
+            try {
+                const code = await generateTOTP(secret);
+                const display = document.getElementById('otpDisplay');
+                const copyBtn = document.getElementById('copyBtn');
+                const timerContainer = document.getElementById('timerContainer');
+
+                display.classList.remove('empty');
+                display.innerHTML = `<div class="otp-code">${code}</div>`;
+                copyBtn.style.display = 'block';
+                timerContainer.style.display = 'flex';
+
+                localStorage.setItem('lastGenerateTime', now.toString());
+                localStorage.setItem('lastOTPCode', code);
+
+                startTimer();
+            } catch (error) {
+                showNotification('Error: ' + error.message, 'error');
+                button.disabled = false;
+            }
+        }
+
+        // Timer
+        let timerInterval;
+        function startTimer() {
+            clearInterval(timerInterval);
+            const button = document.getElementById('generateBtn');
+
+            timerInterval = setInterval(() => {
+                const timeRemaining = getTimeRemaining();
+                const timerText = document.getElementById('timerText');
+                const progressFill = document.getElementById('progressFill');
+
+                timerText.textContent = timeRemaining + 's';
+                progressFill.style.width = (timeRemaining / 30 * 100) + '%';
+
+                if (timeRemaining === 30) {
+                    button.disabled = false;
+                }
+
+                if (timeRemaining === 1) {
+                    document.getElementById('otpDisplay').classList.add('empty');
+                    document.getElementById('otpDisplay').innerHTML = '<div class="otp-empty-text">Klik "Generate OTP" untuk kode baru</div>';
+                    document.getElementById('copyBtn').style.display = 'none';
+                    clearInterval(timerInterval);
+                }
+            }, 100);
+        }
+
+        // Copy to clipboard
+        function copyToClipboard() {
+            const code = localStorage.getItem('lastOTPCode');
+            if (code) {
+                navigator.clipboard.writeText(code).then(() => {
+                    showNotification('Kode disalin ke clipboard', 'success');
+                }).catch(() => {
+                    showNotification('Gagal menyalin kode', 'error');
+                });
+            }
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.classList.add('show');
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('secretModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeSecretModal();
+            }
+        });
+
+        // Enter key in modal
+        document.getElementById('secretInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                saveSecret();
+            }
+        });
+
+        // Initialize
+        window.addEventListener('load', () => {
+            loadSecret();
+            
+            // Check if OTP is already generated and still valid
+            const lastGenerateTime = parseInt(localStorage.getItem('lastGenerateTime') || '0');
+            const now = Date.now();
+            
+            if (now - lastGenerateTime < 30000 && lastGenerateTime > 0) {
+                const code = localStorage.getItem('lastOTPCode');
+                if (code) {
+                    const display = document.getElementById('otpDisplay');
+                    const copyBtn = document.getElementById('copyBtn');
+                    const timerContainer = document.getElementById('timerContainer');
+
+                    display.classList.remove('empty');
+                    display.innerHTML = `<div class="otp-code">${code}</div>`;
+                    copyBtn.style.display = 'block';
+                    timerContainer.style.display = 'flex';
+
+                    startTimer();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
