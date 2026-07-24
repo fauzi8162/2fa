@@ -170,18 +170,13 @@
             letter-spacing: 1px;
         }
 
-        .generate-btn:hover:not(:disabled) {
+        .generate-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
         }
 
-        .generate-btn:active:not(:disabled) {
+        .generate-btn:active {
             transform: translateY(0);
-        }
-
-        .generate-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
         }
 
         .copy-btn {
@@ -586,17 +581,13 @@
                 return;
             }
 
-            const button = document.getElementById('generateBtn');
             const lastGenerateTime = parseInt(localStorage.getItem('lastGenerateTime') || '0');
             const now = Date.now();
 
-            // Check if 30 seconds have passed
+            // Cukup tidak berfungsi jika belum 30 detik tanpa men-disable tombol
             if (now - lastGenerateTime < 30000) {
-                button.disabled = true;
                 return;
             }
-
-            button.disabled = true;
 
             try {
                 const code = await generateTOTP(secret);
@@ -615,7 +606,6 @@
                 startTimer();
             } catch (error) {
                 showNotification('Error: ' + error.message, 'error');
-                button.disabled = false;
             }
         }
 
@@ -623,7 +613,6 @@
         let timerInterval;
         function startTimer() {
             clearInterval(timerInterval);
-            const button = document.getElementById('generateBtn');
 
             timerInterval = setInterval(() => {
                 const timeRemaining = getTimeRemaining();
@@ -633,14 +622,7 @@
                 timerText.textContent = timeRemaining + 's';
                 progressFill.style.width = (timeRemaining / 30 * 100) + '%';
 
-                if (timeRemaining === 30) {
-                    button.disabled = false;
-                }
-
                 if (timeRemaining === 1) {
-                    document.getElementById('otpDisplay').classList.add('empty');
-                    document.getElementById('otpDisplay').innerHTML = '<div class="otp-empty-text">Klik "Generate OTP" untuk kode baru</div>';
-                    document.getElementById('copyBtn').style.display = 'none';
                     clearInterval(timerInterval);
                 }
             }, 100);
@@ -687,7 +669,7 @@
         window.addEventListener('load', () => {
             loadSecret();
             
-            // Check if OTP is already generated and still valid
+            // Check if OTP is already generated
             const lastGenerateTime = parseInt(localStorage.getItem('lastGenerateTime') || '0');
             const now = Date.now();
             
